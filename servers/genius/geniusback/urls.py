@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import *
 
+
 router = DefaultRouter()
 router.register(r'members', MembersViewSet)
 router.register(r'books', BooksViewSet)
@@ -17,4 +18,7 @@ router.register(r'myflower', MyFlowerViewSet)
 
 urlpatterns= [
     path('', include(router.urls)),
+    path('login/', LoginViewforAuth.as_view(), name='login'),
+    path('purchaseSeeds/', PurchaseSeeds.as_view(), name='purchaseSeeds'),
+    path('seedCounts/', GetSeedsCount.as_view(), name='seedCounts'),
 ]

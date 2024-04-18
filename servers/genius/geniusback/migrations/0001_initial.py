@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
                 ('coverImg', models.URLField(max_length=512)),
                 ('copyR', models.CharField(max_length=30)),
                 ('evalStart', models.IntegerField(default=0)),
+                ('writer', models.CharField(max_length=30)),
                 ('lastPage', models.IntegerField()),
             ],
             options={

@@ -10,7 +10,8 @@ python = ">=3.10,<3.12"
 django = "^5.0.1"
 mysqlclient = "^2.2.1"
 djangorestframework = "^3.14.0"
-
+langchain = "^0.1.16"
+openai = "^1.21.2"
 
 [build-system]
 requires = ["poetry-core"]
