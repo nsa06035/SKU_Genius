@@ -36,6 +36,10 @@ ENV VIRTUAL_ENV=/app/.venv \
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
+COPY .env ./
+RUN pip install python-dotenv
+RUN pip install drf-yasg
+
 WORKDIR /app
 COPY src ./src
 COPY manage.py ./manage.py

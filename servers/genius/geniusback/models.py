@@ -40,8 +40,9 @@ class MyLibrary(models.Model):
 class Draft(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
     savedAt = models.DateTimeField(auto_now_add=True)
-    drawSty = models.IntegerField(default=0)
     diff = models.IntegerField(default=0)
+    writer = models.CharField(max_length=30, null=True)
+    genre = models.CharField(max_length=30, null=True)
 
     class Meta:
         db_table = 'draft'
@@ -49,9 +50,9 @@ class Draft(models.Model):
 class Intro(models.Model):
     draft = models.ForeignKey(Draft, on_delete=models.CASCADE)
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
-    introMode = models.BooleanField()
+    introMode = models.BooleanField() # 0 : 알콩이(선택형), 1 : 달콩이(작성형)
     subject = models.CharField(max_length=100)
-    IntroContent = models.TextField()
+    IntroContent = models.TextField(null=True)
 
     class Meta:
         db_table = 'intro'
