@@ -1,6 +1,5 @@
-import random
-
 from django.db import models
+
 
 # Create your models here.
 class Members(models.Model):
@@ -46,6 +45,7 @@ class Draft(models.Model):
 
     class Meta:
         db_table = 'draft'
+
 
 class Intro(models.Model):
     draft = models.ForeignKey(Draft, on_delete=models.CASCADE)

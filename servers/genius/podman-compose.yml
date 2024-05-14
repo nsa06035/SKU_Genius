@@ -18,6 +18,8 @@ services:
       retries: 10
   web:
     build: .
+    env_file:
+      - ../../.env
     command: poetry run python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app/src
