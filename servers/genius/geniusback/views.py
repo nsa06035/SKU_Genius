@@ -127,7 +127,7 @@ class DraftViewSet(viewsets.ModelViewSet):
         return Response({'message': "diff_Count updated successfully", 'diff': diff_count})
 
 
-"""    @action(detail=False, methods=['post'], url_path='genre')
+    @action(detail=False, methods=['post'], url_path='genre')
     def genre(self, request):
         nickname = request.data.get('nickname')
         genre = request.data.get('genre')
@@ -166,7 +166,7 @@ class DraftViewSet(viewsets.ModelViewSet):
             draft_serializer.save()
             return Response(draft_serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(draft_serializer.errors, status=status.HTTP_400_BAD_REQUEST)"""
+            return Response(draft_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class IntroViewSet(viewsets.ModelViewSet):
