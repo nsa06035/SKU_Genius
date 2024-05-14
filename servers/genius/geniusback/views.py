@@ -13,8 +13,6 @@ from .serializers import createSerializer
 #from dotenv import load_dotenv
 #from django.db.models import Max
 
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
 from .utils import generate, generate_image
 import logging
 
