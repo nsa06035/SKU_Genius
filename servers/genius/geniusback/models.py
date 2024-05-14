@@ -19,9 +19,8 @@ class Books(models.Model):
     bookName = models.CharField(max_length=50)
     bCreateDate = models.DateTimeField(auto_now_add=True)
     coverImg = models.URLField(max_length=512)
-    copyR = models.CharField(max_length=30)
+    #copyR = models.CharField(max_length=30)
     evalStart = models.IntegerField(default=0)
-    writer = models.CharField(max_length=30)
     lastPage = models.IntegerField()
 
     class Meta:
@@ -40,6 +39,8 @@ class Draft(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
     savedAt = models.DateTimeField(auto_now_add=True)
     diff = models.IntegerField(default=0)
+    writer = models.CharField(max_length=30)
+    genre = models.CharField(max_length=30, null=True)
 
     class Meta:
         db_table = 'draft'
@@ -86,8 +87,8 @@ class Followers(models.Model):
 
 class Flower(models.Model):
     flowerName = models.CharField(max_length=50)
-    achieveCnt = models.IntegerField()
-    flowerImg = models.URLField(max_length=512)
+    #achieveCnt = models.IntegerField()
+    #flowerImg = models.URLField(max_length=512)
 
     class Meta:
         db_table = 'flower'
@@ -95,7 +96,7 @@ class Flower(models.Model):
 
 class MyForest(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
-    flower = models.ForeignKey(Flower, on_delete=models.CASCADE)
+    #flower = models.ForeignKey(Flower, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'myforest'

@@ -120,11 +120,6 @@ class DraftViewSet(viewsets.ModelViewSet):
         return Response({'message': "diff_Count updated successfully", 'diff': diff_count})
 
 
-#GENRES = [
-#    "fantasy", "science fiction", "mystery", "romance",
-#    "horror", "thriller", "historical", "adventure"
-#]
-
 
 class IntroViewSet(viewsets.ModelViewSet):
     queryset = Intro.objects.all()
