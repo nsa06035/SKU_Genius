@@ -1,6 +1,5 @@
-import random
-
 from django.db import models
+
 
 # Create your models here.
 class Members(models.Model):
@@ -40,11 +39,11 @@ class MyLibrary(models.Model):
 class Draft(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
     savedAt = models.DateTimeField(auto_now_add=True)
-    drawSty = models.IntegerField(default=0)
     diff = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'draft'
+
 
 class Intro(models.Model):
     draft = models.ForeignKey(Draft, on_delete=models.CASCADE)
