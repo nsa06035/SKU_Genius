@@ -8,10 +8,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import get_object_or_404
 from geniusback.models import *
 from .serializers import createSerializer
-#from openai import OpenAI
-#import os
-#from dotenv import load_dotenv
-#from django.db.models import Max
+from openai import OpenAI
+import os
+from django.db.models import Max
 
 from .utils import generate, generate_image
 import logging
@@ -117,9 +116,9 @@ class DraftViewSet(viewsets.ModelViewSet):
                 raise ValueError
         except ValueError:
             #return Response({'error' : 'invalid diff_Count. '
-             #                       'must be an integer between 3 and 5.'}, status=400)
+            #                       'must be an integer between 3 and 5.'}, status=400)
             return Response({'error': 'invalid diff_Count. '
-                                      'must be an integer between 3 and 5.'}, status=status.HTTP_400_BAD_REQUEST)
+                                    'must be an integer between 3 and 5.'}, status=status.HTTP_400_BAD_REQUEST)
 
         draft.diff = diff_count
         draft.save()
@@ -174,20 +173,6 @@ class IntroViewSet(viewsets.ModelViewSet):
     serializer_class = IntroSerializer
 
     @action(detail=False, methods=['post'])
-    """
-    def create_subjects(self, request):
-        draft_id = request.data.get('draft_id')
-        draft=get_object_or_404(Draft, pk=draft_id)
-
-        subjects=generate_subject()
-        created_subjects=[]
-        for subject in subjects:
-            intro = Intro.objects.create(subject=subject, draft=draft)
-            created_subjects.append({'id': intro.id, 'subject': intro.subject})
-        return Response({'message': 'Intro created successfully',
-                        'intros': created_subjects},
-                        status=status.HTTP_201_CREATED)
-"""
     def generate_subject(self,request):
         genre = request.data.get('genre')
         if not genre:
@@ -220,18 +205,6 @@ class IntroViewSet(viewsets.ModelViewSet):
         if not user_id:
             return Response({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         draft = get_object_or_404(Draft, pk=draft_id)
-
-"""
-        Intro.objects.all().delete()
-        subjects=generate_subject()
-        created_subjects=[]
-        for subject in subjects:
-            intro = Intro.objects.create(subject=subject, draft=draft)
-            created_subjects.append({'id': intro.id, 'subject': intro.subject})
-        return Response({'message' : "subject recreated successfully",
-                        'intros': created_subjects},
-                        status=status.HTTP_201_CREATED)
-======="""
         name_prompt = f"주제 {selected_subject}를 기반해서 주인공의 이름 세가지를 생성해."
         try:
             response = generate(name_prompt)
@@ -245,10 +218,10 @@ class IntroViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         intro = Intro(draft=draft, user_id=user_id, introMode=intro_mode,
-                      subject=selected_subject, IntroContent=protagonist_names)
+                    subject=selected_subject, IntroContent=protagonist_names)
         intro.save()
         return Response({'intro_id': intro.id, 'subject': selected_subject,
-                         'intro_content': protagonist_names})
+                        'intro_content': protagonist_names})
 
     @action(detail=False, methods=['post'])
     def recreate_intro_content(self, request):
@@ -276,19 +249,10 @@ class IntroViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         intro = Intro(draft=draft, user_id=user_id, introMode=intro_mode,
-                      subject=selected_subject, IntroContent=protagonist_names)
+                    subject=selected_subject, IntroContent=protagonist_names)
         intro.save()
         return Response({'intro_id': intro.id, 'subject': selected_subject,
-                         'intro_content': protagonist_names})
-
-"""
-        subject_id=request.data.get('subject_id')
-        subject=get_object_or_404(Intro, id=subject_id)
-        return Response({'message' : "subject selected successfully",
-                        'selected_subject':
-                            {'id':subject.id,
-                            'subject':subject.subject,
-                            'draft_id':draft.id}})
+                        'intro_content': protagonist_names})
     
     name = ''
     gender = ''
@@ -326,24 +290,23 @@ class IntroViewSet(viewsets.ModelViewSet):
         # draft로 genre 조회
         genre = draft.genre
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-            {"role": "system", "content": "You are a fairy tale writer for kids and teenager."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
-            {
-                "role": "user", "content": "I will try to create a fairy tale creation service."#동화 제작 서비스를 만들겁니다.
-                "Please write a story about the beginning of a fairy tale in 3 sentences based on the genre of the fairy tale,"#동화의 장르를 바탕으로 동화의 시작에 대한 이야기를 3개의 문장으로 작성해 주세요.
-                "Name of the main character, gender, personality, age and a must-see story. 2~3줄 정도의 짧은 이야기를 생성해주세요. 그리고 다음 이야기 진행을 위한 질문을 작성해주세요."#주인공 이름, 성별, 성격, 나이 그리고 꼭 들어갔으면 하는 이야기, 그리고 다음 동화 이야기를 위한 짧은 질문도 같이 작성해주세요. 
-                #the name of the main character, gender, personality, age, and the story to enter. And please write a short question for the next story of the fairy tale.
-            },
-            {
-                "role": "user", "content": f"The genre is {genre}, the main character's name is {IntroViewSet.name}, the gender is {IntroViewSet.gender}, the personality is {IntroViewSet.personality}, and he is {IntroViewSet.age} years old."
-                f"the story you wish to enter is {IntroViewSet.story}."#장르는 {genre}, 주인공의 이름은 {name}, 성별은 {gender}, 성격은 {personality}, 나이는 {age}. 꼭 들어갔으면 하는 이야기는 {story}.
-                "답변을 한글로 바꿔주세요."
-            },
-
+                {"role": "system", "content": "You are a fairy tale writer for kids."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {
+                    "role": "user", "content": "I will try to create a fairy tale creation service."#동화 제작 서비스를 만들겁니다.
+                    "Please write a story about the beginning of a fairy tale in 3 sentences based on the genre of the fairy tale,"#동화의 장르를 바탕으로 동화의 시작에 대한 이야기를 3개의 문장으로 작성해 주세요.
+                    "Name of the main character, gender, personality, age and a must-see story. 2~3줄 정도의 짧은 이야기를 생성해주세요. 그리고 다음 이야기 진행을 위한 질문을 작성해주세요."#주인공 이름, 성별, 성격, 나이 그리고 꼭 들어갔으면 하는 이야기, 그리고 다음 동화 이야기를 위한 짧은 질문도 같이 작성해주세요. 
+                    "짧은 이야기를 생성해주고 한 칸 띄워서 '다음 이야기를 위한 질문:'의 형태로 작성해주세요."
+                },
+                {
+                    "role": "user", "content": f"The genre is {genre}, the main character's name is {IntroViewSet.name}, the gender is {IntroViewSet.gender}, the personality is {IntroViewSet.personality}, and he is {IntroViewSet.age} years old."
+                    f"the story you wish to enter is {IntroViewSet.story}."#장르는 {genre}, 주인공의 이름은 {name}, 성별은 {gender}, 성격은 {personality}, 나이는 {age}. 꼭 들어갔으면 하는 이야기는 {story}.
+                    "답변을 한글로 바꿔주세요."
+                },
             ]
         )
 
@@ -382,14 +345,13 @@ class IntroViewSet(viewsets.ModelViewSet):
             return Response({'error': 'No intro instance found for the member'}, status=404)
 
     @action(detail=False, methods=['post'])
-    def question(self, request):
+    def middlequestion(self, request):
         return Response({'message': '중간 질문들'})
     
     @action(detail=False, methods=['post'])
     def endingquestion(self, request):
         return Response({'message': '엔딩 질문'})
 
-"""
 class DraftPageViewSet(viewsets.ModelViewSet):
     queryset = DraftPage.objects.all()
     serializer_class = DraftPageSerializer
@@ -455,7 +417,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
                 context = ' '.join(
                     [page.pageContent for page in DraftPage.objects.filter(draft=draft).order_by('pageNum')])
                 first_question_prompt = (f"지금까지의 줄거리야 : {context}. 이를 기반으로, "
-                                         f"이야기를 전개시키기 위해 이야기와 관련된 질문을 한가지만 해.")
+                                        f"이야기를 전개시키기 위해 이야기와 관련된 질문을 한가지만 해.")
 
                 try:
                     response = generate(first_question_prompt)
@@ -468,7 +430,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
                     return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                 second_question_prompt = (f"지금까지의 줄거리 {context}와 이야기 관련 질문 {first_question}을 보고, "
-                                          f"그 질문에 부합하면서 창의적인 답변을 {diff}개만 생성해.")
+                                        f"그 질문에 부합하면서 창의적인 답변을 {diff}개만 생성해.")
                 try:
                     response = generate(second_question_prompt)
                     if isinstance(response, str):
@@ -508,7 +470,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
         context = ' '.join(
             [page.pageContent for page in DraftPage.objects.filter(draft=draft).order_by('pageNum')])
         final_question_prompt = (f"지금까지의 줄거리야 : {context}. 이를 기반으로, "
-                                 f"이야기를 마무리하기 위한 질문을 한가지만 해.")
+                                f"이야기를 마무리하기 위한 질문을 한가지만 해.")
         try:
             response = generate(final_question_prompt)
             if isinstance(response, str):
@@ -520,7 +482,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         final_answer_prompt = (f"지금까지의 줄거리 {context}와 동화의 마지막 이야기를 장식할 질문 {final_question}을 보고, "
-                                  f"그 질문에 부합하면서 창의적인 답변을 {diff}개만 생성해.")
+                                f"그 질문에 부합하면서 창의적인 답변을 {diff}개만 생성해.")
         try:
             response = generate(final_answer_prompt)
             if isinstance(response, str):

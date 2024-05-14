@@ -80,16 +80,15 @@ class FeedBack(models.Model):
 
 class Followers(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
-    followImg = models.URLField(max_length=512)
+    following = models.IntegerField(default=0) # 내가 버튼 누른거(내가 구독한 사람 수)
+    follower = models.IntegerField(default=0) # 구독자 수
 
     class Meta:
         db_table = 'follower'
 
 
 class Flower(models.Model):
-    flowerName = models.CharField(max_length=50)
-    achieveCnt = models.IntegerField()
-    flowerImg = models.URLField(max_length=512)
+    flowerName = models.CharField(max_length=50) # id - 1: 소중한 꽃 피우기, 2 : 나를 표현하기, 3 : 당신은 출석왕, 4 : 당신은 독서왕, 5 : 알콩이와 친해지기, 6 : 달콩이와 친해지기, 7 : 당신은 인싸, 8 : 당신은 훌륭한 작가
 
     class Meta:
         db_table = 'flower'
@@ -97,7 +96,6 @@ class Flower(models.Model):
 
 class MyForest(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
-    flower = models.ForeignKey(Flower, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'myforest'
