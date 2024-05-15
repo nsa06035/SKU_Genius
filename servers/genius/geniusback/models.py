@@ -19,9 +19,7 @@ class Books(models.Model):
     bookName = models.CharField(max_length=50)
     bCreateDate = models.DateTimeField(auto_now_add=True)
     coverImg = models.URLField(max_length=512)
-    copyR = models.CharField(max_length=30)
     evalStart = models.IntegerField(default=0)
-    writer = models.CharField(max_length=30)
     lastPage = models.IntegerField()
 
     class Meta:
@@ -63,6 +61,7 @@ class DraftPage(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
     pageNum = models.IntegerField()
     pageContent = models.TextField()
+    pageImage = models.URLField(max_length=512, null=True)
 
     class Meta:
         db_table = 'draftpage'
