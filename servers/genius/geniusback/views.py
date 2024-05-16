@@ -364,7 +364,7 @@ class IntroViewSet(viewsets.ModelViewSet):
         else:
             return Response({'message': 'No intro data found for the given member and draft.'}, status=status.HTTP_404_NOT_FOUND)
         
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -412,7 +412,7 @@ class IntroViewSet(viewsets.ModelViewSet):
         else:
             return Response({'message': 'No intro data found for the given member and draft.'}, status=status.HTTP_404_NOT_FOUND)
         
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -460,7 +460,7 @@ class IntroViewSet(viewsets.ModelViewSet):
         else:
             return Response({'message': 'No intro data found for the given member and draft.'}, status=status.HTTP_404_NOT_FOUND)
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -658,7 +658,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
         draftpages = DraftPage.objects.filter(draft=draft, user=member)
         combined_content = ' '.join([page.pageContent for page in draftpages])
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -688,7 +688,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
         draftpages = DraftPage.objects.filter(draft=draft, user=member)
         combined_content = ' '.join([page.pageContent for page in draftpages])
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
