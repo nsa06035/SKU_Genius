@@ -346,7 +346,52 @@ class IntroViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def middlequestion(self, request):
-        return Response({'message': '중간 질문들'})
+        nickname = request.data.get('nickname')
+
+        # 닉네임으로 멤버 조회
+        member = get_object_or_404(Members, nickname=nickname)
+
+        # member가 작성한 최신 draft 조회
+        draft = Draft.objects.filter(user=member).order_by('-savedAt').first()
+
+        # intro 조회
+        intro = Intro.objects.filter(user_id=member.id, draft_id=draft.id).aggregate(Max('id'))
+        max_intro_id = intro['id__max']
+
+        if max_intro_id is not None:
+            intro_data = Intro.objects.get(id=max_intro_id)
+            contents = intro_data.IntroContent
+        else:
+            return Response({'message': 'No intro data found for the given member and draft.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        client = OpenAI(api_key=api_key)
+
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a fairy tale writer for kids and teenager."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {
+                    "role": "user", "content": "I will try to create a fairy tale creation service."#동화 제작 서비스를 만들겁니다.                    
+                    f"{contents}"
+                    "Please write a story in 3 sentences"
+                    "제공되는 내용과 다음 이야기를 위한 질문에 대한 답변에 맞춰 자연스럽게 이어지게 2~3줄 정도의 짧은 이야기를 생성해주세요. 그리고 다음 이야기 진행을 위한 질문을 작성해주세요."#주인공 이름, 성별, 성격, 나이 그리고 꼭 들어갔으면 하는 이야기, 그리고 다음 동화 이야기를 위한 짧은 질문도 같이 작성해주세요. 
+                    "짧은 이야기를 생성해주고 한 칸 띄워서 '다음 이야기를 위한 질문:'의 형태로 작성해주세요."
+                    "답변을 한글로 바꿔주세요."
+                },
+            ]
+        )
+
+        # 해당 멤버와 연관된 intro 중에서 가장 ID 값이 큰 intro를 조회
+        latest_intro_id = Intro.objects.filter(user=member).aggregate(Max('id'))['id__max']
+        latest_intro = Intro.objects.filter(id=latest_intro_id).first()
+
+        if latest_intro:
+            # IntroContent 업데이트
+            latest_intro.IntroContent += "/n" + completion.choices[0].message.content + "/n"
+            latest_intro.save()
+            return Response({'message': 'IntroContent updated successfully'}, status=201)
+        else:
+            return Response({'error': 'No intro instance found for the member'}, status=404)
     
     @action(detail=False, methods=['post'])
     def endingquestion(self, request):
