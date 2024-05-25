@@ -140,7 +140,7 @@ class DraftViewSet(viewsets.ModelViewSet):
                 raise ValueError
         except ValueError:
             return Response({'error': 'invalid diff_Count. '
-                                      'must be an integer between 3 and 5.'}, status=status.HTTP_400_BAD_REQUEST)
+                                    'must be an integer between 3 and 5.'}, status=status.HTTP_400_BAD_REQUEST)
 
         draft.diff = diff_count
         draft.save()
@@ -265,7 +265,6 @@ class IntroViewSet(viewsets.ModelViewSet):
         if not user_id:
             return Response({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         draft = get_object_or_404(Draft, pk=draft_id)
-
         name_prompt = f"주제 {selected_subject}를 기반해서 주인공의 이름 {diff}개만 생성해."
         try:
             response = generate(name_prompt)
@@ -279,10 +278,10 @@ class IntroViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         intro = Intro(draft=draft, user_id=user_id, introMode=intro_mode,
-                      subject=selected_subject, IntroContent=protagonist_names)
+                    subject=selected_subject, IntroContent=protagonist_names)
         intro.save()
         return Response({'intro_id': intro.id, 'subject': selected_subject,
-                         'intro_content': protagonist_names})
+                        'intro_content': protagonist_names})
 
     @action(detail=False, methods=['post'])
     def recreate_intro_content(self, request):
@@ -311,10 +310,10 @@ class IntroViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         intro = Intro(draft=draft, user_id=user_id, introMode=intro_mode,
-                      subject=selected_subject, IntroContent=protagonist_names)
+                    subject=selected_subject, IntroContent=protagonist_names)
         intro.save()
         return Response({'intro_id': intro.id, 'subject': selected_subject,
-                         'intro_content': protagonist_names})
+                        'intro_content': protagonist_names})
 
     name = ''
     gender = ''
@@ -375,6 +374,18 @@ class IntroViewSet(viewsets.ModelViewSet):
                                "답변을 한글로 바꿔주세요."
                 },
 
+                {"role": "system", "content": "You are a fairy tale writer for kids."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {
+                    "role": "user", "content": "I will try to create a fairy tale creation service."#동화 제작 서비스를 만들겁니다.
+                    "Please write a story about the beginning of a fairy tale in 3 sentences based on the genre of the fairy tale,"#동화의 장르를 바탕으로 동화의 시작에 대한 이야기를 3개의 문장으로 작성해 주세요.
+                    "Name of the main character, gender, personality, age and a must-see story. 2~3줄 정도의 짧은 이야기를 생성해주세요. 그리고 다음 이야기 진행을 위한 질문을 작성해주세요."#주인공 이름, 성별, 성격, 나이 그리고 꼭 들어갔으면 하는 이야기, 그리고 다음 동화 이야기를 위한 짧은 질문도 같이 작성해주세요. 
+                    "짧은 이야기를 생성해주고 한 칸 띄워서 '다음 이야기를 위한 질문:'의 형태로 작성해주세요."
+                },
+                {
+                    "role": "user", "content": f"The genre is {genre}, the main character's name is {IntroViewSet.name}, the gender is {IntroViewSet.gender}, the personality is {IntroViewSet.personality}, and he is {IntroViewSet.age} years old."
+                    f"the story you wish to enter is {IntroViewSet.story}."#장르는 {genre}, 주인공의 이름은 {name}, 성별은 {gender}, 성격은 {personality}, 나이는 {age}. 꼭 들어갔으면 하는 이야기는 {story}.
+                    "답변을 한글로 바꿔주세요."
+                },
             ]
         )
 
@@ -413,12 +424,154 @@ class IntroViewSet(viewsets.ModelViewSet):
             return Response({'error': 'No intro instance found for the member'}, status=404)
 
     @action(detail=False, methods=['post'])
-    def question(self, request):
-        return Response({'message': '중간 질문들'})
+    def middlequestion(self, request):
+        nickname = request.data.get('nickname')
+
+        # 닉네임으로 멤버 조회
+        member = get_object_or_404(Members, nickname=nickname)
+
+        # member가 작성한 최신 draft 조회
+        draft = Draft.objects.filter(user=member).order_by('-savedAt').first()
+
+        # intro 조회
+        intro = Intro.objects.filter(user_id=member.id, draft_id=draft.id).aggregate(Max('id'))
+        max_intro_id = intro['id__max']
+
+        if max_intro_id is not None:
+            intro_data = Intro.objects.get(id=max_intro_id)
+            contents = intro_data.IntroContent
+        else:
+            return Response({'message': 'No intro data found for the given member and draft.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a fairy tale writer for kids and teenager."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {
+                    "role": "user", "content": f"{contents}"
+                    "Please write a story in 3 sentences"
+                    "제공되는 내용과 다음 이야기를 위한 질문에 대한 답변에 맞춰 자연스럽게 이어지게 2~3줄 정도의 짧은 이야기를 생성해주세요. 그리고 다음 이야기 진행을 위한 질문을 작성해주세요."#주인공 이름, 성별, 성격, 나이 그리고 꼭 들어갔으면 하는 이야기, 그리고 다음 동화 이야기를 위한 짧은 질문도 같이 작성해주세요. 
+                    "짧은 이야기를 생성해주고 한 칸 띄워서 '다음 이야기를 위한 질문:'의 형태로 작성해주세요."
+                    "답변을 한글로 바꿔주세요."
+                },
+            ]
+        )
+
+        # 해당 멤버와 연관된 intro 중에서 가장 ID 값이 큰 intro를 조회
+        latest_intro_id = Intro.objects.filter(user=member).aggregate(Max('id'))['id__max']
+        latest_intro = Intro.objects.filter(id=latest_intro_id).first()
+
+        if latest_intro:
+            # IntroContent 업데이트
+            latest_intro.IntroContent += "/n" + completion.choices[0].message.content + "/n"
+            latest_intro.save()
+            return Response({'message': 'IntroContent updated successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'No intro instance found for the member'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['post'])
     def endingquestion(self, request):
-        return Response({'message': '엔딩 질문'})
+        nickname = request.data.get('nickname')
+
+        # 닉네임으로 멤버 조회
+        member = get_object_or_404(Members, nickname=nickname)
+
+        # member가 작성한 최신 draft 조회
+        draft = Draft.objects.filter(user=member).order_by('-savedAt').first()
+
+        # intro 조회
+        intro = Intro.objects.filter(user_id=member.id, draft_id=draft.id).aggregate(Max('id'))
+        max_intro_id = intro['id__max']
+
+        if max_intro_id is not None:
+            intro_data = Intro.objects.get(id=max_intro_id)
+            contents = intro_data.IntroContent
+        else:
+            return Response({'message': 'No intro data found for the given member and draft.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a fairy tale writer for kids and teenager."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {   
+                    "role": "user", "content": f"{contents}"
+                    "Please write a story in 3 sentences"
+                    "제공되는 내용과 다음 이야기를 위한 질문에 대한 답변에 맞춰 자연스럽게 이어지게 2~3줄 정도의 짧은 이야기를 생성해주세요. 그리고 이야기의 종료를 위한 질문을 작성해주세요."#주인공 이름, 성별, 성격, 나이 그리고 꼭 들어갔으면 하는 이야기, 그리고 다음 동화 이야기를 위한 짧은 질문도 같이 작성해주세요. 
+                    "짧은 이야기를 생성해주고 한 칸 띄워서 '엔딩을 위한 질문:'의 형태로 작성해주세요."
+                    "답변을 한글로 바꿔주세요."
+                },
+            ]
+        )
+        
+        # 해당 멤버와 연관된 intro 중에서 가장 ID 값이 큰 intro를 조회
+        latest_intro_id = Intro.objects.filter(user=member).aggregate(Max('id'))['id__max']
+        latest_intro = Intro.objects.filter(id=latest_intro_id).first()
+
+        if latest_intro:
+            # IntroContent 업데이트
+            latest_intro.IntroContent += "/n" + completion.choices[0].message.content
+            latest_intro.save()
+            return Response({'message': 'IntroContent updated successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'No intro instance found for the member'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'])
+    def bookstory(self, request):
+        nickname = request.data.get('nickname')
+
+        # 닉네임으로 멤버 조회
+        member = get_object_or_404(Members, nickname=nickname)
+
+        # member가 작성한 최신 draft 조회
+        draft = Draft.objects.filter(user=member).order_by('-savedAt').first()
+
+        # intro 조회
+        intro = Intro.objects.filter(user_id=member.id, draft_id=draft.id).aggregate(Max('id'))
+        max_intro_id = intro['id__max']
+
+        if max_intro_id is not None:
+            intro_data = Intro.objects.get(id=max_intro_id)
+            contents = intro_data.IntroContent
+        else:
+            return Response({'message': 'No intro data found for the given member and draft.'}, status=status.HTTP_404_NOT_FOUND)
+
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a fairy tale writer for kids and teenager."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {   
+                    "role": "user", "content": f"{contents}"
+                    "위의 내용을 이용해서 8페이지 분량의 동화책을 작성해줘. 그런데 위의 내용 중에서 질문과 질문에 대한 답변을 그대로 동화책에 넣지 말고 자연스러운 이야기로 바꿔줘."
+                    "그리고 페이지 별로 띄어쓰기로 구분해줘."
+                    "답변을 한글로 바꿔줘."
+                },
+            ]
+        )
+
+        bookstory = completion.choices[0].message.content
+
+        # 줄바꿈 문자를 기준으로 내용 분리
+        bookstory_pages = bookstory.split('\n\n')
+
+        # DraftPage에 내용을 저장
+        for page_num, page_content in enumerate(bookstory_pages, start=1):
+            DraftPage.objects.create(
+                draft=draft,
+                user=member,
+                pageNum=page_num,
+                pageContent=page_content
+            )
+
+        return Response({
+            "message": "동화 이야기가 생성되어 저장되었습니다.",
+            "동화이야기": {f"page_{i+1}": content for i, content in enumerate(bookstory_pages)}
+        }, status=status.HTTP_201_CREATED)
 
 
 class DraftPageViewSet(viewsets.ModelViewSet):
@@ -632,6 +785,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
 
         draft_page = get_object_or_404(DraftPage, pk=draftpage_id)
         unite_prompt = f"질문 {question}과 답변 {selected_answer}를 기반으로 한 페이지 분량의 동화 내용 일부를 완성해."
+
         try:
             response = generate(unite_prompt)
             if isinstance(response, str):
@@ -689,6 +843,66 @@ class DraftPageViewSet(viewsets.ModelViewSet):
 
         return Response({'page_id': draft_page.id, 'image_url': image_url})
 
+
+    @action(detail=False, methods=['post'])
+    def bookname(self, request):
+        nickname = request.data.get('nickname')
+
+        # 닉네임으로 멤버 조회
+        member = get_object_or_404(Members, nickname=nickname)
+
+        # member가 작성한 최신 draft 조회
+        draft = Draft.objects.filter(user=member).order_by('-savedAt').first()
+
+        # draft와 user에 해당하는 draftpage 데이터 조회 및 합치기
+        draftpages = DraftPage.objects.filter(draft=draft, user=member)
+        combined_content = ' '.join([page.pageContent for page in draftpages])
+
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a fairy tale writer for kids and teenager."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {   
+                    "role": "user", "content": f"{combined_content}"
+                    "위의 동화책 내용과 어울리는 제목을 하나만 생성해줘."
+                    "답변을 한글로 바꿔줘."
+                },
+            ]
+        )
+
+        return Response({"message" : "동화 제목이 생성되었습니다.", "동화 제목":{completion.choices[0].message.content}}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'])
+    def bookshortstory(self, request):
+        nickname = request.data.get('nickname')
+
+        # 닉네임으로 멤버 조회
+        member = get_object_or_404(Members, nickname=nickname)
+
+        # member가 작성한 최신 draft 조회
+        draft = Draft.objects.filter(user=member).order_by('-savedAt').first()
+
+        # draft와 user에 해당하는 draftpage 데이터 조회 및 합치기
+        draftpages = DraftPage.objects.filter(draft=draft, user=member)
+        combined_content = ' '.join([page.pageContent for page in draftpages])
+
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a fairy tale writer for kids and teenager."},#당신은 아이들과 십대들을 위한 동화 작가입니다.
+                {   
+                    "role": "user", "content": f"{combined_content}"
+                    "위의 동화책 내용의 줄거리를 2문장으로 짧게 생성해줘."
+                    "답변을 한글로 바꿔줘."
+                },
+            ]
+        )
+
+        return Response({"message" : "동화 줄거리가 생성되었습니다.", "동화 줄거리":{completion.choices[0].message.content}}, status=status.HTTP_201_CREATED)
 
 class FeedBackViewSet(viewsets.ModelViewSet):
     queryset = FeedBack.objects.all()
