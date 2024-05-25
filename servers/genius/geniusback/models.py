@@ -19,9 +19,8 @@ class Books(models.Model):
     bookName = models.CharField(max_length=50)
     bCreateDate = models.DateTimeField(auto_now_add=True)
     coverImg = models.URLField(max_length=512)
-    #copyR = models.CharField(max_length=30)
-    evalStart = models.IntegerField(default=0)
-    lastPage = models.IntegerField()
+    #evalStart = models.IntegerField(default=0)
+    #lastPage = models.IntegerField()
 
     class Meta:
         db_table = 'book'
@@ -39,7 +38,7 @@ class Draft(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
     savedAt = models.DateTimeField(auto_now_add=True)
     diff = models.IntegerField(default=0)
-    writer = models.CharField(max_length=30)
+    writer = models.CharField(max_length=30, null=True)
     genre = models.CharField(max_length=30, null=True)
 
     class Meta:
@@ -49,9 +48,9 @@ class Draft(models.Model):
 class Intro(models.Model):
     draft = models.ForeignKey(Draft, on_delete=models.CASCADE)
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
-    introMode = models.BooleanField()
+    introMode = models.BooleanField() # 0 : 알콩이(선택형), 1 : 달콩이(작성형)
     subject = models.CharField(max_length=100)
-    IntroContent = models.TextField()
+    IntroContent = models.TextField(null=True)
 
     class Meta:
         db_table = 'intro'
@@ -62,6 +61,7 @@ class DraftPage(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
     pageNum = models.IntegerField()
     pageContent = models.TextField()
+    pageImage = models.URLField(max_length=512, null=True)
 
     class Meta:
         db_table = 'draftpage'
