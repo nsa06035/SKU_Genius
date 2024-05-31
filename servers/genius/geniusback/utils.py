@@ -6,7 +6,7 @@ import logging
 import os
 
 
-def generate(question):
+def generate(question):#별도로 학습된 모델 추가? langchain을 써야만하는 이유 프리셋으로 나이대별 구분
     api_key = os.getenv("OPENAI_API_KEY")
     chat_model = ChatOpenAI(openai_api_key=api_key, model="gpt-3.5-turbo", temperature=0.7)
     prompt_template = ChatPromptTemplate.from_template("Role : 너는 아이들과 10대들을 위한 동화를 작성하는 동화 작가야.\n"
