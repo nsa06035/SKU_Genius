@@ -97,7 +97,7 @@ DATABASES = {
         'NAME': os.environ.get('DB_NAME','mysqltest1'),
         'USER': os.environ.get('DB_USER','JY'),
         'PASSWORD': os.environ.get('DB_PASSWORD','tgyhuj3#'),
-        'HOST': os.environ.get('DB_HOST','db'),
+        'HOST': os.environ.get('DB_HOST','localhost'),
         'PORT': '3306',
         'CONNECT_TIMEOUT':180,
     }

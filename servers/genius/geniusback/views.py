@@ -4,13 +4,13 @@ from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate, login
+from django.db.models import Max, F
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import get_object_or_404
 from geniusback.models import *
 from .serializers import createSerializer
 from openai import OpenAI
 import os
-from django.db.models import Max
 
 from .utils import generate, generate_image
 import logging
@@ -147,19 +147,17 @@ class DraftViewSet(viewsets.ModelViewSet):
 
         return Response({'message': "diff_Count updated successfully", 'diff': diff_count})
 
-    @action(detail=True, methods=['get'], url_path='create_books_content')
-    def create_books_content(self, request, pk=None):
+    @action(detail=True, methods=['get'])
+    def create_book_cover(self, request, pk=None):
         draft = self.get_object()
         pages = DraftPage.objects.filter(draft=draft).order_by('pageNum')
         full_text = ' '.join(page.pageContent for page in pages)
-        title_prompt = f"다음 동화의 내용을 바탕으로 어울리는 제목을 생성해. 동화 내용 : {full_text}"
         try:
-            title = generate(title_prompt)
             image_url = generate_image(full_text)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({'draft_id': draft.id, 'title': title, 'image_url': image_url})
+        return Response({'draft_id': draft.id, 'image_url': image_url})
 
     @action(detail=True, methods=['get'])
     def get_page_content(self, request, pk=None):
@@ -610,8 +608,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            new_page = DraftPage.objects.create(draft=draft, user_id=user_id, pageNum=total_pages
-                                                    )
+            new_page = DraftPage.objects.create(draft=draft, user_id=user_id, pageNum=total_pages)
 
             return Response({
                 'question': intro_content+"는 어떤 성격이야?",
@@ -732,6 +729,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
             return Response({
                 'final_question': final_question,
                 'answers': final_answer,
+                'page_num': total_pages,
                 'page_id': new_page.id
             })
 
@@ -769,6 +767,7 @@ class DraftPageViewSet(viewsets.ModelViewSet):
             return Response({
                 'final_question': final_question,
                 'answers': final_answer,
+                'page_num': total_pages,
                 'page_id': new_page.id
             })
 
@@ -913,6 +912,35 @@ class FollowersViewSet(viewsets.ModelViewSet):
     queryset = Followers.objects.all()
     serializer_class = FollowersSerializer
 
+    @action(detail=True, methods=['get'])
+    def get_followers(self, request, pk=None):
+        try:
+            followers_instance=Followers.objects.get(user_id=pk)
+            return Response({
+                'following' : followers_instance.following,
+                'followers' : followers_instance.follower
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def do_follow(self, request, pk=None):
+        follow_user = Members.objects.get(pk=request.user.id)
+        following_user = Members.objects.get(pk=pk)
+
+        try:
+            follow_instance, _ = Followers.objects.get_or_create(user=follow_user)
+            following_instance, _ = Followers.objects.get_or_create(user=following_user)
+
+            follow_instance.following = F('following') + 1
+            follow_instance.save()
+
+            following_instance.follower = F('follower') + 1
+            following_instance.save()
+
+            return Response({'message': 'Follow successes'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FlowerViewSet(viewsets.ModelViewSet):
     queryset = Flower.objects.all()
