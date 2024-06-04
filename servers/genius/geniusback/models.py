@@ -19,9 +19,12 @@ class Books(models.Model):
     bookName = models.CharField(max_length=50)
     bCreateDate = models.DateTimeField(auto_now_add=True)
     coverImg = models.URLField(max_length=512)
+
+
     #줄거리내용추가필요? 시놉시스 char?
     #evalStart = models.IntegerField(default=0)
     #lastPage = models.IntegerField()
+ 
     class Meta:
         db_table = 'book'
 
@@ -87,9 +90,8 @@ class Followers(models.Model):
 
 
 class Flower(models.Model):
-    #achieveCnt = models.IntegerField()
-    #flowerImg = models.URLField(max_length=512)
     flowerName = models.CharField(max_length=50) # id - 1: 소중한 꽃 피우기, 2 : 나를 표현하기, 3 : 당신은 출석왕, 4 : 당신은 독서왕, 5 : 알콩이와 친해지기, 6 : 달콩이와 친해지기, 7 : 당신은 인싸, 8 : 당신은 훌륭한 작가
+
 
     class Meta:
         db_table = 'flower'
@@ -97,6 +99,7 @@ class Flower(models.Model):
 
 class MyForest(models.Model):
     user = models.ForeignKey(Members, on_delete=models.CASCADE)
+
     #flower = models.ForeignKey(Flower, on_delete=models.CASCADE)
 
     class Meta:
