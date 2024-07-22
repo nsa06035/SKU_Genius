@@ -6,7 +6,7 @@ class Members(models.Model):
     nickname = models.CharField(max_length=50)
     email = models.EmailField(max_length=40)
     password = models.CharField(max_length=100)
-    profImg = models.URLField(max_length=512)
+    profImg = models.URLField(max_length=512, default="https://i.pinimg.com/564x/f3/d1/ed/f3d1edf10d63c40e1fa06364176fa502.jpg")
     seedCnt = models.IntegerField(default=10)
     createDate = models.DateTimeField(auto_now_add=True)
     createCnt = models.IntegerField(default=0)
@@ -24,7 +24,7 @@ class Books(models.Model):
     #줄거리내용추가필요? 시놉시스 char?
     #evalStart = models.IntegerField(default=0)
     #lastPage = models.IntegerField()
- 
+
     class Meta:
         db_table = 'book'
 
