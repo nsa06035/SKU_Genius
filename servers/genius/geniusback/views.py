@@ -465,7 +465,10 @@ class IntroViewSet(viewsets.ModelViewSet):
             # IntroContent 업데이트
             latest_intro.IntroContent += "/n" + completion.choices[0].message.content + "/n"
             latest_intro.save()
-            return Response({'message': 'IntroContent updated successfully'}, status=status.HTTP_201_CREATED)
+            return Response({
+                'message': 'IntroContent updated successfully.',
+                '만들어진 이야기': completion.choices[0].message.content
+            }, status=status.HTTP_201_CREATED)
         else:
             return Response({'error': 'No intro instance found for the member'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -513,7 +516,10 @@ class IntroViewSet(viewsets.ModelViewSet):
             # IntroContent 업데이트
             latest_intro.IntroContent += "/n" + completion.choices[0].message.content
             latest_intro.save()
-            return Response({'message': 'IntroContent updated successfully'}, status=status.HTTP_201_CREATED)
+            return Response({
+                'message': 'IntroContent updated successfully.',
+                '만들어진 이야기': completion.choices[0].message.content
+            }, status=status.HTTP_201_CREATED)
         else:
             return Response({'error': 'No intro instance found for the member'}, status=status.HTTP_404_NOT_FOUND)
 
