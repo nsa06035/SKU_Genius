@@ -43,7 +43,7 @@ AI fairytale maker Project
 
 │        ├─ manage.py
 
-│        └─ __init__.py
+│        └─ __init__.pyiiuo
 
 ## How to use
 First run : docker-compose -f podman-compose.yml up --build -d
